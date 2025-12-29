@@ -1,38 +1,51 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { useState } from "react";
+
+type RegisterForm = {
+  email: string;
+  password: string;
+  role: "USER" | "ADMIN";
+};
 
 export default function Register() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"USER" | "ADMIN">("USER");
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const registerUser = async () => {
-    setError("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterForm>({
+    defaultValues: {
+      role: "USER",
+    },
+  });
+
+  const onSubmit = async (data: RegisterForm) => {
+    setServerError("");
     setLoading(true);
 
     try {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, role }),
+        body: JSON.stringify(data),
       });
 
-      const data = await res.json();
+      const result = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Registration failed");
-        setLoading(false);
+        setServerError(result.error || "Registration failed");
         return;
       }
 
       router.push("/login");
     } catch (err) {
-      setError("Something went wrong");
+      setServerError("Something went wrong");
       console.error(err);
     } finally {
       setLoading(false);
@@ -41,46 +54,85 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="bg-white p-8 rounded-lg shadow-md w-full max-w-md"
+      >
         <h1 className="text-2xl font-bold mb-6 text-center">Register</h1>
 
-        <label className="block mb-2 text-sm font-medium">Email</label>
+        {/* Email */}
+        <label className="block mb-1 text-sm font-medium">Email</label>
         <input
           type="email"
           placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full mb-4 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          {...register("email", {
+            required: "Email is required",
+            pattern: {
+              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+              message: "Invalid email address",
+            },
+          })}
+          className={`w-full mb-2 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+            errors.email
+              ? "border-red-500 focus:ring-red-500"
+              : "focus:ring-blue-500"
+          }`}
         />
+        {errors.email && (
+          <p className="text-red-500 text-sm mb-3">
+            {errors.email.message}
+          </p>
+        )}
 
-        <label className="block mb-2 text-sm font-medium">Password</label>
+        {/* Password */}
+        <label className="block mb-1 text-sm font-medium">Password</label>
         <input
           type="password"
           placeholder="********"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full mb-4 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          {...register("password", {
+            required: "Password is required",
+            minLength: {
+              value: 3,
+              message: "Password must be at least 3 characters",
+            },
+          })}
+          className={`w-full mb-2 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+            errors.password
+              ? "border-red-500 focus:ring-red-500"
+              : "focus:ring-blue-500"
+          }`}
         />
+        {errors.password && (
+          <p className="text-red-500 text-sm mb-3">
+            {errors.password.message}
+          </p>
+        )}
 
-        <label className="block mb-2 text-sm font-medium">Role</label>
+        {/* Role */}
+        <label className="block mb-1 text-sm font-medium">Role</label>
         <select
-          value={role}
-          onChange={(e) => setRole(e.target.value as "USER" | "ADMIN")}
+          {...register("role")}
           className="w-full mb-6 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="USER">User</option>
           <option value="ADMIN">Author</option>
         </select>
 
+        {/* Server Error */}
+        {serverError && (
+          <p className="text-red-600 text-sm mb-4 text-center">
+            {serverError}
+          </p>
+        )}
+
+        {/* Submit */}
         <button
-          onClick={registerUser}
+          type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 disabled:opacity-50"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition disabled:opacity-50"
         >
           {loading ? "Registering..." : "Register"}
         </button>
-
-        {error && <p className="mt-4 text-red-500 text-sm">{error}</p>}
 
         <p className="mt-4 text-sm text-center text-gray-600">
           Already have an account?{" "}
@@ -88,7 +140,7 @@ export default function Register() {
             Login
           </a>
         </p>
-      </div>
+      </form>
     </div>
   );
 }
