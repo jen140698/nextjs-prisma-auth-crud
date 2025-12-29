@@ -3,25 +3,18 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
-interface Params {
-  params: { id: string };
-}
-
 // GET single post
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(
+  _req: Request,
+  { params }: { params: { id: string } } // inline typing
+) {
   try {
     const post = await prisma.post.findUnique({
       where: { id: Number(params.id) },
-      include: {
-        author: {
-          select: { id: true, email: true },
-        },
-      },
+      include: { author: { select: { id: true, email: true } } },
     });
 
-    if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
-    }
+    if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
 
     return NextResponse.json(post);
   } catch (error) {
@@ -31,31 +24,25 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 // UPDATE post (ADMIN only)
-export async function PUT(req: Request, { params }: Params) {
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user) {
+    if (!session?.user)
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
 
-    if (!user || user.role !== "ADMIN") {
+    if (!user || user.role !== "ADMIN")
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
-    }
 
     const { title, content } = await req.json();
 
-    const post = await prisma.post.findUnique({
-      where: { id: Number(params.id) },
-    });
-
-    if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
-    }
+    const post = await prisma.post.findUnique({ where: { id: Number(params.id) } });
+    if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
 
     const updatedPost = await prisma.post.update({
       where: { id: post.id },
@@ -70,33 +57,24 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 // DELETE post (ADMIN only)
-export async function DELETE(req: Request, { params }: Params) {
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user) {
+    if (!session?.user)
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
-
-    if (!user || user.role !== "ADMIN") {
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!user || user.role !== "ADMIN")
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
-    }
 
-    const post = await prisma.post.findUnique({
-      where: { id: Number(params.id) },
-    });
+    const post = await prisma.post.findUnique({ where: { id: Number(params.id) } });
+    if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
 
-    if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
-    }
-
-    await prisma.post.delete({
-      where: { id: post.id },
-    });
+    await prisma.post.delete({ where: { id: post.id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
