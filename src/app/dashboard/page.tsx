@@ -70,8 +70,12 @@ export default function Dashboard() {
       }),
     });
 
-    reset();
     setEditingId(null);
+    reset({
+      title: "",
+      content: "",
+    });
+
     setLoading(false);
     fetchPosts();
   };
@@ -109,11 +113,10 @@ export default function Dashboard() {
               {/* Title */}
               <input
                 placeholder="Post title"
-                className={`w-full mb-1 px-4 py-2 border rounded-md focus:ring-2 ${
-                  errors.title
+                className={`w-full mb-1 px-4 py-2 border rounded-md focus:ring-2 ${errors.title
                     ? "border-red-500 focus:ring-red-400"
                     : "focus:ring-blue-500"
-                }`}
+                  }`}
                 {...register("title", {
                   required: "Title is required",
                   minLength: {
@@ -132,11 +135,10 @@ export default function Dashboard() {
               <textarea
                 placeholder="Post content"
                 rows={4}
-                className={`w-full mb-1 px-4 py-2 border rounded-md focus:ring-2 ${
-                  errors.content
+                className={`w-full mb-1 px-4 py-2 border rounded-md focus:ring-2 ${errors.content
                     ? "border-red-500 focus:ring-red-400"
                     : "focus:ring-blue-500"
-                }`}
+                  }`}
                 {...register("content", {
                   required: "Content is required",
                   minLength: {
